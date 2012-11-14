@@ -449,6 +449,11 @@ class ExportCommand(InitCommand):
             'language', nargs='*',
             help='Language code to export. If not given, all '+
                  'initialized languages will be exported.')
+        parser.add_argument(
+            '--skip-languages', default=False, action='store_true',
+            help='If this option is set and no language codes are '+
+                 'provided, then export template only, ignoring all '+
+                 'existing languages')
 
     def execute(self):
         env = self.env
@@ -462,6 +467,9 @@ class ExportCommand(InitCommand):
         # time, or should the user be able to set fixed meta data, and
         # we simply merge subsequent updates in?
         self.generate_templates()
+
+        if self.env.options.skip_languages:
+            return
 
         initial_warning = False
 
