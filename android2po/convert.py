@@ -10,13 +10,14 @@ The process thus is:
     -> ResourceTree -> write_xml()
 
 """
-
+import datetime
 from itertools import chain
 from collections import namedtuple
 from compat import OrderedDict
 from lxml import etree
 from babel.messages import Catalog
 from babel.plural import _plural_tags as PLURAL_TAGS
+from babel.util import UTC
 
 
 __all__ = ('xml2po', 'po2xml', 'read_xml', 'write_xml',
@@ -480,7 +481,8 @@ def xml2po(resources, translations=None, filter=None, warnfunc=dummy_warn):
     """
     assert not translations or translations.language
 
-    catalog = Catalog()
+    creation_date = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=UTC)
+    catalog = Catalog(creation_date=creation_date)
     if translations is not None:
         catalog.locale = translations.language.locale
         # We cannot let Babel determine the plural expr for the locale by
