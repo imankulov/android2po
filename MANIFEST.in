@@ -1,5 +1,6 @@
 recursive-include scripts *
 recursive-include tests *
+recursive-include data *.json
 include *.rst
 include *.pip
 include MANIFEST.in

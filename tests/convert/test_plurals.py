@@ -31,18 +31,18 @@ def catalog_to_translations(catalog):
 def test_xml_to_po_conversion_ru_pl():
     mapping = {
         'ru': {
-            0: 'loc many',  # 0 яблок
+            0: 'loc other',  # 0 яблок
             1: 'loc one',   # 1 яблоко
             2: 'loc few',   # 2 яблока
-            5: 'loc many',  # 5 яблок
+            5: 'loc other',  # 5 яблок
             21: 'loc one',  # 21 яблоко
         },
         'pl': {
-            0: 'loc many',  # 0 jabłek
+            0: 'loc other',  # 0 jabłek
             1: 'loc one',   # 1 jabłko
             2: 'loc few',   # 2 jabłka
             22: 'loc few',  # 22 jabłka
-            25: 'loc many',  # 25 jabłek
+            25: 'loc other',  # 25 jabłek
         }
 
     }
@@ -59,7 +59,6 @@ def test_xml_to_po_conversion_ru_pl():
                 <plurals name="plurals_test">
                     <item quantity="one">loc one</item>
                     <item quantity="few">loc few</item>
-                    <item quantity="many">loc many</item>
                     <item quantity="other">loc other</item>
                 </plurals>
             </resources>
@@ -67,7 +66,7 @@ def test_xml_to_po_conversion_ru_pl():
 
         # message
         msg = list(catalog)[1]
-        assert msg.string == ('loc one', 'loc few', 'loc many', 'loc other')
+        assert msg.string == ('loc one', 'loc few', 'loc other')
 
         # translation works properly
         trans = catalog_to_translations(catalog)
@@ -134,7 +133,7 @@ def test_read_language_xml():
     # Make sure the catalog has the proper header
     assert catalog.num_plurals == 3
     print(catalog.plural_expr)
-    assert catalog.plural_expr == '(((n == 0) || ((n != 1) && (((n % 100) >= 1 && (n % 100) <= 19)))) ? 1 : (n == 1) ? 0 : 2)'
+    assert catalog.plural_expr == '((n == 1) ? 0 : ((n == 0 || n != 1 && n % 100 >= 1 && n % 100 <= 19) ? 1 : 2))'
 
 
 def test_write():
@@ -144,18 +143,18 @@ def test_write():
     """
     catalog = Catalog()
     catalog.language = Language('bs') # Bosnian
-    catalog.add(('foo', 'foos'), ('one', 'few', 'many', 'other'), context='foo')
+    catalog.add(('foo', 'foos'), ('one', 'few', 'other'), context='foo')
     assert po2xml(catalog) == {'foo': {
-        'few': 'few', 'many': 'many', 'one': 'one', 'other': 'other'}}
+        'few': 'few', 'one': 'one', 'other': 'other'}}
 
 
 def test_write_incomplete_plural():
     """Test behaviour with incompletely translated plurals in .po."""
     catalog = Catalog()
     catalog.language = Language('bs') # Bosnian
-    catalog.add(('foo', 'foos'), ('one', '', 'many', ''), context='foo')
+    catalog.add(('foo', 'foos'), ('one', '', 'other'), context='foo')
     assert po2xml(catalog) == {'foo': {
-        'few': '', 'many': 'many', 'one': 'one', 'other': ''}}
+        'few': '', 'one': 'one', 'other': 'other'}}
 
 
 def test_write_incorrect_plural():

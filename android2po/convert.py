@@ -16,6 +16,8 @@ import datetime
 from itertools import chain
 from collections import namedtuple
 from lxml import etree
+
+from android2po import cldr_db
 from babel.messages import Catalog
 from babel.plural import _plural_tags as PLURAL_TAGS
 from babel.util import UTC
@@ -463,8 +465,7 @@ def set_catalog_plural_forms(catalog, language):
     language.
     """
     try:
-        catalog._num_plurals, catalog._plural_expr = plural_to_gettext(
-            language.locale.plural_form)
+        catalog._num_plurals, catalog._plural_expr = cldr_db.get_plural_forms(language.code)
     except KeyError:
         # Babel/CDLR seems to be lacking this data sometimes, for
         # example for "uk"; fortunately, ignoring this is narrowly
@@ -581,11 +582,11 @@ def xml2po(resources, translations=None, resfilter=None, warnfunc=dummy_warn):
             # would be ignored by Android as well).
             msgstr = ''
             if trans_value:
-                allowed_keywords = translations.language.plural_keywords
+                allowed_keywords = cldr_db.get_plural_keywords(translations.language.code)
                 msgstr = ['' for i in range(len(allowed_keywords))]
                 for quantity, translation in list(trans_value.items()):
                     try:
-                        index = translations.language.plural_keywords.index(quantity)
+                        index = allowed_keywords.index(quantity)
                     except ValueError:
                         warnfunc(
                             ('"plurals "%s" uses quantity "%s", which '
@@ -770,21 +771,21 @@ def po2xml(catalog, with_untranslated=False, resfilter=None, warnfunc=dummy_warn
     which for technical reasons always must include all elements, and it
     does not include plurals, for which the same is true.
     """
-
     # Validate that the plurals in the .po catalog match those that
     # we expect on the Android side per CLDR definition. However, we
     # only want to trouble the user with this if plurals are actually
     # used.
     plural_validation = {'done': False}
+    plural_keywords = lambda: cldr_db.get_plural_keywords(catalog.language.code)
     def validate_plural_config():
         if plural_validation['done']:
             return
-        if catalog.num_plurals != len(catalog.language.plural_keywords):
+        if catalog.num_plurals != len(plural_keywords()):
             warnfunc(('Catalog defines %d plurals, we expect %d for '
                       'this language. See the README for an '
                       'explanation. plurals have very likely been '
                       'incorrectly written.') % (
-                catalog.num_plurals, len(catalog.language.plural_keywords)), 'error')
+                catalog.num_plurals, len(plural_keywords())), 'error')
             pass
         plural_validation['done'] = True
 
@@ -838,8 +839,8 @@ def po2xml(catalog, with_untranslated=False, resfilter=None, warnfunc=dummy_warn
             # ``value``, since ``message.id`` will only be a 2-tuple made
             # up of the msgid and msgid_plural definitions.
             xml_tree[message.context] = Plurals([
-                (k, None) for k in catalog.language.plural_keywords])
-            for index, keyword in enumerate(catalog.language.plural_keywords):
+                (k, None) for k in plural_keywords()])
+            for index, keyword in enumerate(plural_keywords()):
                 # Assume each keyword matches one index.
                 try:
                     xml_tree[message.context][keyword] = message.string[index]
